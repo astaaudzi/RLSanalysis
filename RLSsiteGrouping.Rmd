@@ -39,9 +39,12 @@ tasmania = get_map(location = c(lon = 145, lat = -40), zoom = 6, maptype = "sate
 
 ## TODO - add a title and axis names to this 
 ggmap(tasmania, extent = "panel", legend = "bottomright") +
+ggtitle("Reef Life Survey Sites") +  
+theme(plot.title = element_text(hjust = 0.5)) +  
 geom_point(aes(x = sites_bas$long, y = sites_bas$latt), data = sites_bas, size = 1, color = as.numeric(factor(sites_bas$location))) +
 scale_y_continuous(limits = c(-44.00, -37.00), expand = c(0, 0))  +
-scale_x_continuous(limits = c(143.00, 150.00), expand = c(0, 0))
+scale_x_continuous(limits = c(143.00, 150.00), expand = c(0, 0)) 
+  # TITLE ADDED BUT NOT SURE WHY THE ERROR
 
 #Table of sites
 #knitr::kable(sites_bas)
