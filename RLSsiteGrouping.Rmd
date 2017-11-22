@@ -11,8 +11,9 @@ output:
     toc:yes
 ---
 
+#Show me the data!#
 
-```{r warning=FALSE, message=FALSE, warning=FALSE}
+```{r warning=FALSE, message=FALSE, warning=FALSE, fig.width=10, fig.height=6}
 
 rm(list=ls())
 list.files()
@@ -41,7 +42,10 @@ tasmania = get_map(location = c(lon = 145, lat = -40), zoom = 6, maptype = "sate
 ggmap(tasmania, extent = "panel", legend = "bottomright") +
 geom_point(aes(x = sites_bas$long, y = sites_bas$latt), data = sites_bas, size = 1, color = as.numeric(factor(sites_bas$location))) +
 scale_y_continuous(limits = c(-44.00, -37.00), expand = c(0, 0))  +
-scale_x_continuous(limits = c(143.00, 150.00), expand = c(0, 0))
+scale_x_continuous(limits = c(143.00, 150.00), expand = c(0, 0)) +
+ggtitle("Map of Reef Life Survey sites in southern Australia") +
+    xlab("Longitutde") + ylab("Latitude")
+
 
 #Table of sites
 #knitr::kable(sites_bas)
