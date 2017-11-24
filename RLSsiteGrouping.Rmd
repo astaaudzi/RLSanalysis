@@ -12,7 +12,7 @@ output:
 ---
 
 
-```{r warning=FALSE, message=FALSE, warning=FALSE}
+```{r message=FALSE, warning=FALSE}
 
 rm(list=ls())
 list.files()
@@ -53,6 +53,7 @@ scale_x_continuous(limits = c(143.00, 150.00), expand = c(0, 0))
 
 There are 531 sites. They are roughly grouped into locations as shown on the map, but Rick suggests that location name should not be used. So let's group them differently. First we define a grid of 10 intervals and group the sites into the grid. 
 
+
 ```{r warning=FALSE, message=FALSE, warning=FALSE} 
 
 ## Group the sites into 
@@ -61,12 +62,11 @@ n_groups <- 10
 int <- (max(sites_bas$latt) - min(sites_bas$latt)) / n_groups #latitude interval
 sites_bas$group <- ceiling((sites_bas$latt - (min(sites_bas$latt)-0.001)) / int )
 
-int2 <- (max(sites_bas$long) - min(sites_bas$long)) / n_groups #long based interval 
+int2 <- (max(sites_bas$long) - min(sites_bas$long)) / n_groups #longitude interval 
 sites_bas$group2 <- ceiling((sites_bas$long - (min(sites_bas$long)-0.001)) / int2 )
 
 sites_bas$group3 <- ((sites_bas$group - 1) * n_groups) + sites_bas$group2  # final grouping, the groups are not consequtive numbers 
 length(unique(sites_bas$group3)) # this gives 31 groups
-
 
 #and map these sites 
 hlines <- seq(min(sites_bas$latt),max(sites_bas$latt),by=int)
@@ -155,7 +155,7 @@ save(siteData, file = "SiteData_bas.RData") # to avoid reading all the matrices 
 
 #Now group sites based on environmental data 
 
-```{r warning=FALSE, message=FALSE, warning=FALSE} 
+```{r warning=FALSE, message=FALSE, warning=FALSE, echo=T} 
 
 load (file = "SiteData_bas.RData")
 
@@ -166,7 +166,7 @@ siteData1 <- siteData %>% select(SiteCode, latt, long, nsp, depth, damax, chlome
 ## The data set above can include any range of selected variables. NOTE, the protection status or variable 'mpa' probably should not be included in clustering. We should cluster sites by different variables. Then the models will be run with and without fishing and emergent data compared to sites with and without protection 
 
 plot(siteData1[,-1])
-#It is interesting how latitude correlates with phos and silicate so strongly! Looks a big weird. Latitude correlates with sstmean and sstmax but not sstrange. damax (turbidity) correlates strongly with chlomean and chlomax. So it looks that we could reduce the strongly correlated variables 
+#It is interesting how latitude correlates with phos and silicate so strongly! Looks a bit weird. Latitude correlates with sstmean and sstmax but not strange. damax (turbidity) correlates strongly with chlomean and chlomax. So it looks that we could reduce the strongly correlated variables 
 
 
 #in the new selection I exclude strongly correlated variables and also abundA (algal abudnance) and wave exposure due to missing data
@@ -174,14 +174,9 @@ siteData1 <- siteData %>% select(SiteCode, latt, long, nsp, depth, chlomean, pho
 
 plot(siteData1[,-1])
 
-## Freddie, this is a super clumsy code and I am sure this could be done better - I need to turn it into a numeric matrix wtih site names as row names and variables as columns. This is because clustering analyses do not run on lists but need numeric values 
-
-siteForPCA <- matrix(unlist(siteData1),ncol=length(siteData1[,]),byrow=FALSE) #turn the list into matrix
-siteForPCAt <- siteForPCA[,-1] #remove the first column which is the site code
-storage.mode(siteForPCAt) <- "numeric"
-siteForPCAt[is.nan(siteForPCAt)] <- NA  # some NaN still found in the data and will mess up the analyses. Replace them with NA
-rownames(siteForPCAt) <- siteData1[,1] #site code as row names
-colnames(siteForPCAt) <- colnames(siteData1[,-1]) #variables as column names
+## Creating a numeric matrix with rownames = sitenames
+siteForPCAt <- as.matrix(sapply(siteData1[,-1], as.numeric))  
+rownames(siteForPCAt) <- siteData1[,1] # site code as row names
 
 # This is now the main data for PCA analysis of sites based on environmental conditions
 envirPCA <- siteForPCAt
@@ -294,14 +289,12 @@ SpeciesforPCA <- rls_bas %>%
 
 ## This gives the mean abundance of key species per site - a large matrix
 
-#Freddie, here again is the same issue of converting a list into a matrix
-spPCAdata <- spread(SpeciesforPCA, key = group, value = abundMean, fill = 0)
-spPCAdata1 <- matrix(unlist(spPCAdata),ncol=length(spPCAdata[,]),byrow=FALSE) #turn the list into matrix
-spPCAdatat <- spPCAdata1[,-1]
-storage.mode(spPCAdatat) <- "numeric"
-rownames(spPCAdatat) <- spPCAdata1[,1]
-colnames(spPCAdatat) <- colnames(spPCAdata[,-1])
-speciesPCA <- t(spPCAdatat)
+# converting the 'tibble' to a nice dataframe in the style we want to matrix (Taxonomic_name as the colnames)
+# then converting the dataframe into a matrix with group number as maxtrix row names
+foo <- dcast(SpeciesforPCA, group ~ TAXONOMIC_NAME)
+speciesPCA  <- as.matrix(sapply(foo[,-1], as.numeric))
+rownames(speciesPCA) <- foo[,1]
+speciesPCA [is.na(speciesPCA )] <- 0 # changes all the NA values to zero
 
 #Freddie, we need to give more informative titles to the groups we now define from the coordinate grid. For example, in the plots below it would be good to identify what those groups are 
 
